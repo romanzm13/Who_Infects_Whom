@@ -52,13 +52,13 @@ def mat_cor_h_sync(data_suav,umbral,h_inf=0,h_sup=15,diff_param=False):
             cor_mat_i_j,H_mat_i_j = selec_h(data[i,:],data[j,:],h_inf,h_sup)
             cor_mat_j_i,H_mat_j_i = selec_h(data[j,:],data[i,:],h_inf,h_sup)
             #Determine the maximum between the components i,j and j,i of the correlation matrix
-            if cor_mat_i_j >= cor_mat_j_i:
+            if abs(cor_mat_i_j) >= abs(cor_mat_j_i):
                 #If the lag is no greater than the threshold then it is added to the output
-                if H_mat_i_j <= umbral:
+                if H_mat_i_j <= umbral and cor_mat_i_j > 0:
                     cor_mat[i,j],H_mat[i,j] = cor_mat_i_j,1
             else:
                 #If the lag is no greater than the threshold then it is added to the output
-                if H_mat_j_i <= umbral:
+                if H_mat_j_i <= umbral and cor_mat_j_i > 0:
                     cor_mat[i,j],H_mat[i,j] = cor_mat_j_i,1
     #Make the matrices symmetric because in this case directions are not distinguished
     cor_mat_sim = cor_mat+cor_mat.T
@@ -85,13 +85,13 @@ def constr_cor_max_dir(data_suav,umbral,h_inf=0,h_sup=15,diff_param=False):
             cor_mat_i_j,H_mat_i_j = selec_h(data[i,:],data[j,:],h_inf,h_sup)
             cor_mat_j_i,H_mat_j_i = selec_h(data[j,:],data[i,:],h_inf,h_sup)
             #Determine the maximum between the components i,j and j,i of the correlation matrix
-            if cor_mat_i_j >= cor_mat_j_i:
+            if abs(cor_mat_i_j) >= abs(cor_mat_j_i):
                 #If the lag is no greater than the threshold then it is added to the output
-                if H_mat_i_j >= umbral:
+                if H_mat_i_j >= umbral and cor_mat_i_j > 0:
                     cor_mat[i,j],H_mat[i,j],A_mat[i,j] = cor_mat_i_j,H_mat_i_j,1
             else:
                 #If the lag is no greater than the threshold then it is added to the output
-                if H_mat_j_i >= umbral:
+                if H_mat_j_i >= umbral and cor_mat_j_i > 0:
                     cor_mat[i,j],H_mat[j,i],A_mat[j,i] = cor_mat_j_i,H_mat_j_i,1
     #Convert the correlation matrix to symmetric
     cor_mat_sim = cor_mat+cor_mat.T
