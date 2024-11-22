@@ -425,7 +425,8 @@ savefig('series_com_norm_jal.png', dpi=350)
 
 """Representation of interactions through a graph"""
 
-W_cor_max_8_part,H_new_8_part,A_8_part = constr_cor_max_dir(mat_smoot_com,umbral=4,h_inf=4,h_sup=8,diff_param=True)
+h_min,h_max = 4,8
+W_cor_max_8_part,H_new_8_part,A_8_part = constr_cor_max_dir(mat_smoot_com,umbral=h_min,h_inf=h_min,h_sup=h_max,diff_param=True)
 print(A_8_part)
 print(H_new_8_part)
 print(W_cor_max_8_part)
@@ -467,4 +468,7 @@ print("Since "+str(p)+" < "+str(max(cross_corr))+", then the correlation represe
 
 """Apply Granger causality test"""
 
-grangers_causation_matrix(mat_smoot_com, ["Community_0","Community_1"], maxlag=8)
+labels_com = []
+for i in range(0,n_com):
+    labels_com.append("Community_"+str(i))
+print(grangers_causation_matrix(mat_smoot_com, labels_com, maxlag=list(arange(h_min,h_max+1,1))))

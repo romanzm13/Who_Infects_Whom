@@ -226,7 +226,8 @@ savefig('series_com_norm_USA.png', dpi=300)
 
 """Representation of interactions between communities through a graph"""
 
-W_cor_max_part,H_new_part,A_part = constr_cor_max_dir(mat_smoot_com,umbral=2,h_inf=2,h_sup=4,diff_param=True)
+h_min,h_max = 2,4
+W_cor_max_part,H_new_part,A_part = constr_cor_max_dir(mat_smoot_com,umbral=h_min,h_inf=h_min,h_sup=h_max,diff_param=True)
 print(A_part)
 print(H_new_part)
 print(W_cor_max_part)
@@ -268,4 +269,7 @@ print("Since "+str(p)+" < 0.89761231, then the correlation represented in the gr
 
 """Apply Granger causality test"""
 
-grangers_causation_matrix(mat_smoot_com, ["Community_0","Community_1"], maxlag=4)
+labels_com = []
+for i in range(0,n_com):
+    labels_com.append("Community_"+str(i))
+print(grangers_causation_matrix(mat_smoot_com, labels_com, maxlag=list(arange(h_min,h_max+1,1))))

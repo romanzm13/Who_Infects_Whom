@@ -402,14 +402,12 @@ def grangers_causation_matrix(data_matrix, variables_name, maxlag, test='ssr_chi
             sub_mat = zeros((n_data,2))
             sub_mat[:,0],sub_mat[:,1] = data_matrix[i,:],data_matrix[j,:]
             test_result = grangercausalitytests(sub_mat, maxlag=maxlag, verbose=False)
-            p_values = [round(test_result[i+1][0][test][1],4) for i in range(maxlag)]
+            p_values = [round(test_result[x][0][test][1],4) for x in maxlag]
             min_p_value = min(p_values)
             df.loc[df.columns[i], df.index[j]] = min_p_value
     df.columns = [var + '_x' for var in variables_name]
     df.index = [var + '_y' for var in variables_name]
     return df
-
-
 
 """Check if the time series is stationary"""
 
