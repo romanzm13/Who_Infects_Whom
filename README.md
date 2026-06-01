@@ -1,5 +1,5 @@
 # Who_Infects_Whom
- Analysis of time series associated to registered cases of COVID-19 and influenza A (H1N1) per age group.
+Analysis of time series associated with reported COVID-19 and Influenza A (H1N1) cases by age group.
  ## Analysis_Series_GeNA
 This code contains all the functions required to apply a methodology for classifying time series according to their synchronicity over time. It also includes functions for identifying possible causal relationships between non-synchronized time series.
  ## Series_covid_Jal_GeNA_final_version
