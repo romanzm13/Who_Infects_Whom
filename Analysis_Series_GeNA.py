@@ -3,10 +3,8 @@
 @author: Román Zúñiga Macías
 """
 
-from numpy import count_nonzero,arange,array,dot,asarray,zeros,apply_along_axis,around,sort,shape,savetxt,array_equal,max,argmin,argmax,fill_diagonal,ones,argsort,std,diag,random,diff
+from numpy import dot,asarray,zeros,apply_along_axis,shape,max,argsort,diff
 from numpy.linalg import eig
-from matplotlib.pyplot import plot,figure,title,legend,xlabel,ylabel,grid,axvline,axhline,savefig,imshow,show,scatter,hist,bar,subplot,subplots,text,stem
-from math import sqrt
 import pandas as pd
 from datetime import datetime,timedelta
 from statsmodels.tsa.stattools import adfuller,grangercausalitytests
@@ -15,14 +13,14 @@ import statsmodels.api as sm
 """#Functions for cross-correlation analysis and construction of time series weighted graphs"""
 
 #Calculate the correlation between two time series with a lag h (cross-correlation)
-def cross_cor_h(x,y,h):
+def cross_cor_h(x, y, h):
     #This function uses Python's cross-correlation implementation to optimize time
     ro_xy = sm.tsa.stattools.ccf(x, y, adjusted = False, nlags = h)
     return ro_xy
 
 #h_sup indicates the range of days that will be taken into account to apply the lags of the time series
 #h_inf is the minimum lag that will be considered
-def selec_h(x,y,h_inf,h_sup):
+def selec_h(x, y, h_inf, h_sup):
     #Let's evaluate the correlation with values ​​of h from h_inf to h_sup
     #Correlations array from 0 to h_sup
     arr_corr = cross_cor_h(x,y,h_sup)
@@ -34,9 +32,9 @@ def selec_h(x,y,h_inf,h_sup):
 
 #h_sup indicates the maximum number of days that will be considered as lag in the time series
 #Function to detect synchronized time series
-def mat_cor_h_sync(data_suav,umbral,h_inf=0,h_sup=15,diff_param=False):
+def mat_cor_h_sync(data_suav, phi, L_inf=0, L_sup=15, diff_param=False):
     #If diff=True then each row of the data matrix will be differenced
-    if diff_param==True:
+    if diff_param == True:
         data = apply_along_axis(diff,1,data_suav)
     else:
         data = data_suav.copy()
@@ -49,16 +47,16 @@ def mat_cor_h_sync(data_suav,umbral,h_inf=0,h_sup=15,diff_param=False):
     #Get correlation values ​​between each pair of time series
     for i in range(0,n):
         for j in range(i+1,n):
-            cor_mat_i_j,H_mat_i_j = selec_h(data[i,:],data[j,:],h_inf,h_sup)
-            cor_mat_j_i,H_mat_j_i = selec_h(data[j,:],data[i,:],h_inf,h_sup)
+            cor_mat_i_j,H_mat_i_j = selec_h(data[i,:],data[j,:], L_inf, L_sup)
+            cor_mat_j_i,H_mat_j_i = selec_h(data[j,:],data[i,:],L_inf, L_sup)
             #Determine the maximum between the components i,j and j,i of the correlation matrix
             if abs(cor_mat_i_j) >= abs(cor_mat_j_i):
                 #If the lag is no greater than the threshold then it is added to the output
-                if H_mat_i_j <= umbral and cor_mat_i_j > 0:
+                if H_mat_i_j <= phi and cor_mat_i_j > 0:
                     cor_mat[i,j],H_mat[i,j] = cor_mat_i_j,1
             else:
                 #If the lag is no greater than the threshold then it is added to the output
-                if H_mat_j_i <= umbral and cor_mat_j_i > 0:
+                if H_mat_j_i <= phi and cor_mat_j_i > 0:
                     cor_mat[i,j],H_mat[i,j] = cor_mat_j_i,1
     #Make the matrices symmetric because in this case directions are not distinguished
     cor_mat_sim = cor_mat+cor_mat.T
@@ -66,7 +64,7 @@ def mat_cor_h_sync(data_suav,umbral,h_inf=0,h_sup=15,diff_param=False):
     return cor_mat_sim,H_mat_sim
 
 #Function to find direction of time series interaction
-def constr_cor_max_dir(data_suav,umbral,h_inf=0,h_sup=15,diff_param=False):
+def constr_cor_max_dir(data_suav, tau, L_inf=0, L_sup=15, diff_param=False):
     #If diff=True then each row of the data matrix will be differenced
     if diff_param == True:
         data = apply_along_axis(diff,1,data_suav)
@@ -82,16 +80,16 @@ def constr_cor_max_dir(data_suav,umbral,h_inf=0,h_sup=15,diff_param=False):
     #Get correlation values ​​between each pair of time series
     for i in range(0,n):
         for j in range(i+1,n):
-            cor_mat_i_j,H_mat_i_j = selec_h(data[i,:],data[j,:],h_inf,h_sup)
-            cor_mat_j_i,H_mat_j_i = selec_h(data[j,:],data[i,:],h_inf,h_sup)
+            cor_mat_i_j,H_mat_i_j = selec_h(data[i,:], data[j,:], L_inf, L_sup)
+            cor_mat_j_i,H_mat_j_i = selec_h(data[j,:], data[i,:], L_inf, L_sup)
             #Determine the maximum between the components i,j and j,i of the correlation matrix
             if abs(cor_mat_i_j) >= abs(cor_mat_j_i):
                 #If the lag is no greater than the threshold then it is added to the output
-                if H_mat_i_j >= umbral and cor_mat_i_j > 0:
+                if H_mat_i_j >= tau and cor_mat_i_j > 0:
                     cor_mat[i,j],H_mat[i,j],A_mat[i,j] = cor_mat_i_j,H_mat_i_j,1
             else:
                 #If the lag is no greater than the threshold then it is added to the output
-                if H_mat_j_i >= umbral and cor_mat_j_i > 0:
+                if H_mat_j_i >= tau and cor_mat_j_i > 0:
                     cor_mat[i,j],H_mat[j,i],A_mat[j,i] = cor_mat_j_i,H_mat_j_i,1
     #Convert the correlation matrix to symmetric
     cor_mat_sim = cor_mat+cor_mat.T
@@ -192,10 +190,10 @@ def W_list(list_edges,W,num_dig=3):
 """#Implementation of GeNA"""
 
 def delta(i,j):
-    if i==j:
-        out=1
+    if i == j:
+        out = 1
     else:
-        out=0
+        out = 0
     return out
 
 def create_com(com_prev,u,threshold=0):
@@ -207,12 +205,12 @@ def create_com(com_prev,u,threshold=0):
     u11,u22 = [],[]
     #The default threshold value for bipartitioning is zero
     for i in range(0,n):
-        if u[i]>threshold:
+        if u[i] > threshold:
             com1.append(com_prev[i])
             s[i,0] = 1
             u11.append(u[i])
         #The nodes corresponding to elements of u that are equal to zero are nodes with incident weights equal to zero, so they are discarded
-        elif u[i]<threshold:
+        elif u[i] < threshold:
             com2.append(com_prev[i])
             s[i,0] = -1
             u22.append(u[i])
@@ -269,7 +267,7 @@ def GeNA(A):
     #Create list of labels of the nodes that make up the graph
     com = list(range(0,n))
     #Determine if the obtained partition is trivial
-    if beta1<=0.000001:
+    if beta1 <= 0.000001:
         com_fin.append(com)
         u_fin.append(u1)
     else:
@@ -279,20 +277,20 @@ def GeNA(A):
         #List of eigenvectors u that contains the belonging level of each node to its respective community
         u_res,u_act = [u11,u22],[u11,u22]
         n_com = len(com_res)
-        while(n_com!=0):
+        while(n_com != 0):
             for j in range(0,n_com):
                 beta1,u11,u22,inc_mod,com11,com22 = bipartition(mat_mod,com_res[j])
                 #Stop dividing the community when the leading eigenvalue is zero or very close to zero
                 #A leading eigenvalue close to zero can produce trivial bipartitions
-                if beta1<=0.000001:
+                if beta1 <= 0.000001:
                     com_fin.append(com_res[j])
                     u_fin.append(u_res[j])
-                elif len(com11)<=1 or len(com22)<=1:
+                elif len(com11) <= 1 or len(com22) <= 1:
                     #In case a trivial partition has been leaked, the empty community will not be included
-                    if len(com11)>0:
+                    if len(com11) > 0:
                         com_fin.append(com11)
                         u_fin.append(u11)
-                    if len(com22)>0:
+                    if len(com22) > 0:
                         com_fin.append(com22)
                         u_fin.append(u22)
                 else:
@@ -323,7 +321,7 @@ def comp(x,com):
     out = 0
     n = len(com)
     for i in range(0,n):
-        if x==com[i]:
+        if x == com[i]:
             out = 1
     return out
 

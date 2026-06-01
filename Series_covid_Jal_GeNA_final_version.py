@@ -5,9 +5,8 @@
 
 #pip install xlrd==1.2.0
 
-from numpy import count_nonzero,arange,array,dot,asarray,zeros,apply_along_axis,around,sort,shape,savetxt,array_equal,max,argmin,argmax,fill_diagonal,ones,argsort,std,diag,random,diff
-from numpy.linalg import eig
-from matplotlib.pyplot import plot,figure,title,legend,xlabel,ylabel,grid,axvline,axhline,savefig,imshow,show,scatter,hist,bar,subplot,subplots,text,stem,rcParams
+from numpy import arange,asarray,zeros,shape,max,diff
+from matplotlib.pyplot import plot,figure,title,legend,xlabel,ylabel,grid,axhline,savefig,bar,subplot,subplots,text,stem,rcParams
 from math import sqrt
 import pandas as pd
 from datetime import datetime
@@ -21,7 +20,7 @@ from Analysis_Series_GeNA import moving_avg,increase_date,mat_cor_h_sync,GeNA,le
 
 """Function to group data by age"""
 
-def group_by_age(age_group,days_range=184,date_0='2021-07-01'):
+def group_by_age(age_group, days_range=184, date_0='2021-07-01'):
     date = date_0
     #We want the last age range to be greater than or equal to the penultimate age_group value
     age_group[-1] = 150
@@ -35,9 +34,9 @@ def group_by_age(age_group,days_range=184,date_0='2021-07-01'):
     mat_rang_per = zeros((gr,days_range))
     #Generate time series by range of days, counting cases per day within each range
     for i in range(0,days_range):
-        df_day = df_per[df_per['FEC_INI_SIN']==date]
-        df_day['EDAD'] = pd.cut(df_day['EDAD'],age_group,labels=num_group)
-        df_day_count = df_day.groupby(by=['EDAD']).count()
+        df_day = df_per[df_per['FEC_INI_SIN'] == date]
+        df_day['EDAD'] = pd.cut(df_day['EDAD'], age_group, labels=num_group)
+        df_day_count = df_day.groupby(by=['EDAD'], observed=False).count()
         df_day_count1 = asarray(df_day_count).T
         mat_rang_per[:,i] = df_day_count1
         date_prev = date
@@ -149,7 +148,7 @@ range_days = int(range_date.days)
 
 """Data on inhabitants of Jalisco in 2020 by each age (from 0 years to 100 and more)"""
 
-df_age = pd.read_excel("datos_edades_Jalisco_2020.xlsx",sheet_name="Hoja1")
+df_age = pd.read_excel("datos_edades_Jalisco_2020.xlsx", sheet_name="Hoja1")
 
 df_age.info()
 
@@ -167,14 +166,13 @@ accum_age = accum_data(pop_per_age)
 #Age ranges
 group_unique = [0,130]
 gr_unique = len(group_unique)-1
-mat_rang_per = group_by_age(group_unique,days_range=range_days,date_0='2021-06-01')
+mat_rang_per = group_by_age(group_unique, days_range=range_days, date_0='2021-06-01')
 #Smoothed time series matrix
 range_days_smoot = range_days-6
-mat_rang_smoot_unique = zeros((gr_unique,range_days_smoot))
+mat_rang_smoot_unique = zeros((gr_unique, range_days_smoot))
 for i in range(0,gr_unique):
     mat_rang_smoot_unique[i,:] = moving_avg(mat_rang_per[i,:])
 
-print(mat_rang_smoot_unique[0,:])
 
 #Range of days represented
 days_time_serie = arange(0,range_days_smoot,1)
@@ -184,7 +182,7 @@ title("Smoothized time series from June 1, 2021 to February 28, 2022")
 xlabel("Day number")
 ylabel("Number of cases")
 #Plot the smoothed time series
-plot(days_time_serie,mat_rang_smoot_unique[0,:],color='red',linewidth=0.5,linestyle="--",marker="o")
+plot(days_time_serie,mat_rang_smoot_unique[0,:], color='red', linewidth=0.5, linestyle="--", marker="o")
 
 
 """Set start and end dates for data pools"""
@@ -192,8 +190,8 @@ plot(days_time_serie,mat_rang_smoot_unique[0,:],color='red',linewidth=0.5,linest
 #Start and end date of the period to be analyzed
 #The period consists of 9 months
 date_ini,date_end = '2021-06-01','2022-02-28'
-df_day_accum = df1[df1['FEC_INI_SIN']<=date_end]
-df_day = df_day_accum[df_day_accum['FEC_INI_SIN']>=date_ini]
+df_day_accum = df1[df1['FEC_INI_SIN'] <= date_end]
+df_day = df_day_accum[df_day_accum['FEC_INI_SIN'] >= date_ini]
 date_ini = datetime(int(date_ini[0:4]),int(date_ini[5:7]),int(date_ini[8:10]))
 date_end = datetime(int(date_end[0:4]),int(date_end[5:7]),int(date_end[8:10]))
 range_date = date_end-date_ini
@@ -219,21 +217,21 @@ M_smoot = []
 #Leading eigenvector for the level of community membership
 u_k = []
 for k in range(k_min,k_max):
-    groups_now,pop_now = groups_perc(pop_per_age,k)
+    groups_now,pop_now = groups_perc(pop_per_age, k)
     pop_k.append(pop_now)
     #Add 0 to the beginning of the list
     group_age_now = groups_now.tolist()
     group_age_now.insert(0,0)
     groups_k.append(group_age_now)
     gr_now = k
-    mat_rang_per = group_by_age(group_age_now,days_range=range_days,date_0='2021-06-01')
+    mat_rang_per = group_by_age(group_age_now, days_range=range_days, date_0='2021-06-01')
     #Test time series smoothed using moving averages
     #Smoothed time series matrix
     mat_rang_smoot = zeros((gr_now,range_days_smoot))
     for i in range(0,gr_now):
         mat_rang_smoot[i,:] = moving_avg(mat_rang_per[i,:])
     M_smoot.append(mat_rang_smoot)
-    W_cor_max_now,H_max_now = mat_cor_h_sync(mat_rang_smoot,umbral=1,h_inf=0,h_sup=7,diff_param=True)
+    W_cor_max_now,H_max_now = mat_cor_h_sync(mat_rang_smoot, phi=1, L_inf=0, L_sup=7, diff_param=True)
     H_max_k.append(H_max_now)
     cor_max_k.append(W_cor_max_now)
     #Generate partition with GeNA algorithm
@@ -247,7 +245,7 @@ for k in range(k_min,k_max):
 
 figure(figsize=(8,5))
 k_lab=arange(k_min,k_max,1)
-plot(k_lab,mod_k,color='blue',linewidth=0.5,linestyle="--",marker="o")
+plot(k_lab, mod_k, color='blue', linewidth=0.5, linestyle="--", marker="o")
 title("Modularity of the partition obtained with k initial age groups")
 xlabel("k")
 ylabel("Modularity")
@@ -287,7 +285,7 @@ for k in range(0,n_com):
       com_now = part8[k]
       len_now = len(com_now)
       for l in range(0,len_now):
-            plot(days_time_serie,mat_smoot_now[com_now[l],:],linewidth=0.5,color=list_colors[k],linestyle="--",marker="o")
+            plot(days_time_serie, mat_smoot_now[com_now[l],:], linewidth=0.5, color=list_colors[k], linestyle="--", marker="o")
             #Determine if the current time series is stationary through the ADF test
             result_now = verify_stationary(mat_smoot_now[com_now[l],:])
             print("Statistical test for age group time series "+str(com_now[l]))
@@ -307,11 +305,11 @@ subplot(1,2,1)
 grid()
 xlabel("Age group", fontsize=15)
 #xlabel("Grupo")
-bar(list(map(str,part8[0])),lev_member[0], color = list_colors[0])
+bar(list(map(str, part8[0])), lev_member[0], color = list_colors[0])
 subplot(1,2,2)
 grid()
 xlabel("Age group", fontsize=15)
-bar(list(map(str,part8[1])),lev_member[1], color = list_colors[1])
+bar(list(map(str,part8[1])), lev_member[1], color = list_colors[1])
 
 st = fig.suptitle("(b) Level of membership of each group to its community", fontsize = 18)
 st.set_y(0.95)
@@ -326,7 +324,7 @@ n8 = len(pop8)
 bar(arange(0,n8,1),pop8,color='blue')
 #Add value labels to each bar
 for i in range(0,n8):
-    text(i-0.4,pop8[i],str(pop8[i]),color="k")
+    text(i-0.4,pop8[i], str(pop8[i]), color="k")
 title("Population of Jalisco in 2020 by each age group")
 xlabel("Group")
 ylabel("Number of inhabitants")
@@ -396,7 +394,7 @@ ylabel("Number of cases")
 n_com = len(part8)
 #Plot the time series that corresponds to each group
 for k in range(0,n_com):
-      plot(days_time_serie,mat_smoot_com[k,:],linewidth=0.5,color=list_colors[k],linestyle="--",marker="o",label='Comunidad '+str(k))
+      plot(days_time_serie,mat_smoot_com[k,:], linewidth=0.5, color=list_colors[k], linestyle="--", marker="o", label='Comunidad '+str(k))
       #Determine if the current time series is stationary through the ADF test
       result_act = verify_stationary(mat_smoot_com[k,:])
       print("Statistical test for community time series "+str(k))
@@ -425,8 +423,8 @@ savefig('series_com_norm_jal.png', dpi=350)
 
 """Representation of interactions through a graph"""
 
-h_min,h_max = 4,8
-W_cor_max_8_part,H_new_8_part,A_8_part = constr_cor_max_dir(mat_smoot_com,umbral=h_min,h_inf=h_min,h_sup=h_max,diff_param=True)
+L_min,L_max = 4,8
+W_cor_max_8_part,H_new_8_part,A_8_part = constr_cor_max_dir(mat_smoot_com, tau=L_min, L_inf=L_min, L_sup=L_max, diff_param=True)
 print(A_8_part)
 print(H_new_8_part)
 print(W_cor_max_8_part)
@@ -459,9 +457,9 @@ ylabel("Correlation")
 title("Sample cross correlation function with lags in [-"+str(number_lags)+","+str(number_lags)+"]")
 axhline(y = max(cross_corr), linestyle="--", color = 'red')
 grid()
-stem(range(-number_lags,number_lags+1),cross_corr)
+stem(range(-number_lags,number_lags+1), cross_corr)
 
-"""Compare its value with $\frac{1.96}{\sqrt{n}}$ to reject the hypothesis that it is white noise and therefore does not follow a distribution $N(0,σ)$"""
+"""Compare each correlation value with $\frac{1.96}{\sqrt{n}}$ to reject the hypothesis that it is white noise and therefore does not follow a distribution $N(0,σ)$"""
 
 p = 1.96/sqrt(len(diff(mat_smoot_com[0,:])))
 print("Since "+str(p)+" < "+str(max(cross_corr))+", then the correlation represented in the graph is significant")
@@ -471,4 +469,4 @@ print("Since "+str(p)+" < "+str(max(cross_corr))+", then the correlation represe
 labels_com = []
 for i in range(0,n_com):
     labels_com.append("Community_"+str(i))
-print(grangers_causation_matrix(mat_smoot_com, labels_com, maxlag=list(arange(h_min,h_max+1,1))))
+print(grangers_causation_matrix(mat_smoot_com, labels_com, maxlag=list(arange(L_min,L_max+1,1))))

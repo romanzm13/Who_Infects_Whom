@@ -5,12 +5,10 @@
 
 #pip install xlrd==1.2.0
 
-from numpy import count_nonzero,arange,array,dot,asarray,zeros,apply_along_axis,around,sort,shape,savetxt,array_equal,max,argmin,argmax,fill_diagonal,ones,argsort,std,diag,random,diff
-from numpy.linalg import eig
-from matplotlib.pyplot import plot,figure,title,legend,xlabel,ylabel,grid,axvline,savefig,imshow,show,scatter,hist,bar,subplot,subplots,text,axhline,stem,rcParams
+from numpy import arange,asarray,zeros,shape,max,diff
+from matplotlib.pyplot import plot,figure,title,legend,xlabel,ylabel,grid,savefig,bar,subplot,subplots,axhline,stem,rcParams
 from math import sqrt
 import pandas as pd
-from datetime import datetime
 import matplotlib.patches as mpatches
 import igraph as ig
 import statsmodels.api as sm
@@ -33,7 +31,7 @@ rcParams['ytick.labelsize'] = 14
 """Incidence data"""
 
 #Records of influenza cases per week in the United States from 2021 to 2024
-df0 = pd.read_csv('AgeViewByWeek_Feb4.csv')
+df0 = pd.read_csv('AgeViewByWeek_030824.csv')
 df0.info()
 #We will only keep the columns 'Year', 'Week', 'Age Group' and 'A (H1N1)pdm09'
 df1 = df0.drop(['A (H1)','A (Unable to Subtype)','A (H3)','A (Subtyping not Performed)','B (Victoria Lineage)','B (Yamagata Lineage)','B (Lineage Unspecified)','H3N2v'],axis = 1)
@@ -42,8 +40,8 @@ groups_age = df1[' Age Group'].unique()
 
 #Sort records according to date (year and week number)
 df2 = df1.sort_values(by = ["Year"," Week"], ascending = True, axis = 0)
-#We will keep only the records of 2022, 2023 and 2024
-df3 = df2[((df2["Year"] == 2021) & (df2[" Week"] >= 48)) | (df2["Year"] == 2022) | (df2["Year"] == 2023) | ((df2["Year"] == 2024) & (df2[" Week"] <= 8))]
+#We will keep only the records from Week 19 of 2022 through Week 30 of 2024.
+df3 = df2[((df2["Year"] == 2022) & (df2[" Week"] >= 19)) | (df2["Year"] == 2023)| ((df2["Year"] == 2024) & (df2[" Week"] <= 30))]
 #Generate dataframes according to ages
 df_0_4 = df3[df3[' Age Group'] =='0-4 yr']
 df_5_24 = df3[df3[' Age Group'] =='5-24 yr']
@@ -58,16 +56,13 @@ arr_65 = asarray(df_65['A (H1N1)pdm09'])
 #Number of weeks
 n_weeks = len(arr_0_4)
 mat_age = zeros((4,n_weeks))
-mat_age[0,:] = arr_0_4
-mat_age[1,:] = arr_5_24
-mat_age[2,:] = arr_25_64
-mat_age[3,:] = arr_65
+mat_age[0,:], mat_age[1,:], mat_age[2,:], mat_age[3,:] = arr_0_4, arr_5_24, arr_25_64, arr_65
 
 n_weeks_suav = n_weeks-4
 #Smoothed time series matrix
-mat_smoot = zeros((4,n_weeks_suav))
+mat_smoot = zeros((4, n_weeks_suav))
 for i in range(0,4):
-    mat_smoot[i,:] = moving_avg(mat_age[i,:],k=5)
+    mat_smoot[i,:] = moving_avg(mat_age[i,:], k=5)
 
 #Plot smoothed time series with 5-week moving averages
 #Two of the series are not stationary, so the four had to be differenced
@@ -81,9 +76,9 @@ for i in range(0,4):
     print()
 grid()
 legend()
-xlabel("Week",fontsize=15)
-ylabel("Number of cases",fontsize=15)
-title("Cases of influenza A (H1N1) per week from September 2022 to January 2024 in public laboratories of USA",fontsize=16)
+xlabel("Week", fontsize=15)
+ylabel("Number of cases", fontsize=15)
+title("Smoothed daily incidence of influenza A(H1N1) by age group", fontsize=15)
 
 """**By differencing the smoothed series, they all become stationary**
 
@@ -91,7 +86,7 @@ title("Cases of influenza A (H1N1) per week from September 2022 to January 2024 
 """
 
 #Test time series smoothed with moving averages
-W_cor_max_now,H_max_now = mat_cor_h_sync(mat_smoot,umbral=1,h_inf=0,h_sup=4,diff_param=True)
+W_cor_max_now,H_max_now = mat_cor_h_sync(mat_smoot, phi=2, L_inf=0, L_sup=4, diff_param=True)
 #Generate partition with GeNA algorithm
 u_nk_now,com_nk_now = GeNA(W_cor_max_now)
 mod_now = modularity(W_cor_max_now,com_nk_now)
@@ -120,7 +115,7 @@ for k in range(0,n_com):
       com_now = com_nk_now[k]
       len_now = len(com_now)
       for l in range(0,len_now):
-            plot(weeks_time_serie,mat_smoot[com_now[l],:],linewidth=0.5,color=list_colors[k],linestyle="--",marker="o")
+            plot(weeks_time_serie,mat_smoot[com_now[l],:], linewidth=0.5, color=list_colors[k], linestyle="--",marker="o")
       patch_now = mpatches.Patch(color=list_colors[k], label='Community '+str(k))
       patches.append(patch_now)
 legend(handles=patches,prop={'size':14})
@@ -134,7 +129,7 @@ print(lev_member)
 fig = figure(figsize = (10,5))
 subplot(1,2,1)
 grid()
-xlabel("Age group",fontsize=15)
+xlabel("Age group", fontsize=15)
 bar(list(map(str,com_nk_now[0])),lev_member[0], color = list_colors[0])
 subplot(1,2,2)
 grid()
@@ -159,10 +154,10 @@ for k in range(0,n_com):
       com_now = com_nk_now[k]
       len_now = len(com_now)
       for l in range(0,len_now):
-            plot(weeks_time_serie,mat_smoot[com_now[l],:]/sum(mat_smoot[com_now[l],:]),linewidth=0.5,color=list_colors[k],linestyle="--",marker="o")
+            plot(weeks_time_serie,mat_smoot[com_now[l],:]/sum(mat_smoot[com_now[l],:]), linewidth=0.5, color=list_colors[k], linestyle="--", marker="o")
       patch_now = mpatches.Patch(color=list_colors[k], label='Community '+str(k))
       patches.append(patch_now)
-legend(handles=patches,prop={'size':14})
+legend(handles=patches, prop={'size':14})
 savefig('series_age_norm_USA.png', dpi=300)
 
 """Representation of interactions between nodes through a graph"""
@@ -197,7 +192,7 @@ ylabel("Number of cases")
 n_com = len(com_nk_now)
 #Plot the time series that corresponds to each group
 for k in range(0,n_com):
-      plot(weeks_time_serie,mat_smoot_com[k,:],linewidth=0.5,color=list_colors[k],linestyle="--",marker="o",label='Community '+str(k))
+      plot(weeks_time_serie,mat_smoot_com[k,:], linewidth=0.5, color=list_colors[k], linestyle="--", marker="o", label='Community '+str(k))
       #Determine if the current time series is stationary through the ADF test
       result_now = verify_stationary(mat_smoot_com[k,:])
       print("Statistical test for community time series "+str(k))
@@ -226,8 +221,8 @@ savefig('series_com_norm_USA.png', dpi=300)
 
 """Representation of interactions between communities through a graph"""
 
-h_min,h_max = 2,4
-W_cor_max_part,H_new_part,A_part = constr_cor_max_dir(mat_smoot_com,umbral=h_min,h_inf=h_min,h_sup=h_max,diff_param=True)
+L_min,L_max = 2,4
+W_cor_max_part,H_new_part,A_part = constr_cor_max_dir(mat_smoot_com, tau=L_min, L_inf=L_min, L_sup=L_max,diff_param=True)
 print(A_part)
 print(H_new_part)
 print(W_cor_max_part)
@@ -272,4 +267,4 @@ print("Since "+str(p)+" < 0.89761231, then the correlation represented in the gr
 labels_com = []
 for i in range(0,n_com):
     labels_com.append("Community_"+str(i))
-print(grangers_causation_matrix(mat_smoot_com, labels_com, maxlag=list(arange(h_min,h_max+1,1))))
+print(grangers_causation_matrix(mat_smoot_com, labels_com, maxlag=list(arange(L_min,L_max+1,1))))
