@@ -9,6 +9,7 @@ import pandas as pd
 from datetime import datetime,timedelta
 from statsmodels.tsa.stattools import adfuller,grangercausalitytests
 import statsmodels.api as sm
+from math import sqrt
 
 """#Functions for cross-correlation analysis and construction of time series weighted graphs"""
 
@@ -52,11 +53,11 @@ def mat_cor_h_sync(data_suav, phi, L_inf=0, L_sup=15, diff_param=False):
             #Determine the maximum between the components i,j and j,i of the correlation matrix
             if abs(cor_mat_i_j) >= abs(cor_mat_j_i):
                 #If the lag is no greater than the threshold then it is added to the output
-                if H_mat_i_j <= phi and cor_mat_i_j > 0:
+                if H_mat_i_j <= phi and cor_mat_i_j > 1.96/(sqrt(len(data[0,:]-H_mat_i_j))):
                     cor_mat[i,j],H_mat[i,j] = cor_mat_i_j,1
             else:
                 #If the lag is no greater than the threshold then it is added to the output
-                if H_mat_j_i <= phi and cor_mat_j_i > 0:
+                if H_mat_j_i <= phi and cor_mat_j_i > 1.96/(sqrt(len(data[0,:]-H_mat_j_i))):
                     cor_mat[i,j],H_mat[i,j] = cor_mat_j_i,1
     #Make the matrices symmetric because in this case directions are not distinguished
     cor_mat_sim = cor_mat+cor_mat.T
