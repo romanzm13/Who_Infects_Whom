@@ -86,11 +86,11 @@ def constr_cor_max_dir(data_suav, tau, L_inf=0, L_sup=15, diff_param=False):
             #Determine the maximum between the components i,j and j,i of the correlation matrix
             if abs(cor_mat_i_j) >= abs(cor_mat_j_i):
                 #If the lag is no greater than the threshold then it is added to the output
-                if H_mat_i_j >= tau and cor_mat_i_j > 0:
+                if H_mat_i_j >= tau and cor_mat_i_j > 1.96/(sqrt(len(data[0,:]-H_mat_i_j))):
                     cor_mat[i,j],H_mat[i,j],A_mat[i,j] = cor_mat_i_j,H_mat_i_j,1
             else:
                 #If the lag is no greater than the threshold then it is added to the output
-                if H_mat_j_i >= tau and cor_mat_j_i > 0:
+                if H_mat_j_i >= tau and cor_mat_j_i > 1.96/(sqrt(len(data[0,:]-H_mat_i_j))):
                     cor_mat[i,j],H_mat[j,i],A_mat[j,i] = cor_mat_j_i,H_mat_j_i,1
     #Convert the correlation matrix to symmetric
     cor_mat_sim = cor_mat+cor_mat.T
