@@ -8,3 +8,4 @@ This code demonstrates an application of the previously mentioned methodology to
 In this case, the application of the proposed methodology is demonstrated using weekly data on confirmed Influenza A (H1N1) cases in the United States. The data are divided into four age groups. The results identify which of these groups serve as the primary sources of infection during the epidemic outbreaks considered.
 ## The details of the proposed methodology and their application can be found in the following article:
 Zúñiga-Macías, R., Barradas, I. Who infects whom in an epidemic?. Acta Biotheor 74, 22 (2026). https://doi.org/10.1007/s10441-026-09531-w
+\ The full text is available at: https://rdcu.be/fmsMg
